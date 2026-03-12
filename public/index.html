@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesquisa Religiosa da Turma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- TELA: INÍCIO -->
+  <div id="tela-inicio" class="tela ativa">
+    <header class="hero">
+      <div class="hero-tag">Trabalho Escolar</div>
+      <h1>Pesquisa<br/><em>Religiosa</em><br/>da Turma</h1>
+      <p class="hero-desc">Cada grupo registra as religiões dos seus membros.<br/>Os resultados são atualizados em tempo real.</p>
+    </header>
+
+    <main class="inicio-main">
+      <section class="section-grupos">
+        <div class="section-header">
+          <h2>Grupos</h2>
+          <button class="btn-novo-grupo" onclick="abrirModalGrupo()">+ Novo grupo</button>
+        </div>
+        <div id="lista-grupos"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- TELA: GRUPO -->
+  <div id="tela-grupo" class="tela">
+    <div class="grupo-topo">
+      <button class="voltar" onclick="voltarInicio()">← Voltar</button>
+      <div class="grupo-topo-info">
+        <span class="grupo-topo-label">Grupo</span>
+        <h2 id="grupo-nome-topo"></h2>
+      </div>
+      <div class="grupo-topo-total">
+        <span id="total-num">0</span>
+        <span class="total-label">respostas</span>
+      </div>
+    </div>
+
+    <div class="grupo-corpo">
+
+      <!-- Formulário -->
+      <div class="card form-card">
+        <h3>Adicionar resposta</h3>
+        <div class="form-linha">
+          <div class="campo">
+            <label>Nome <span class="opt">(opcional)</span></label>
+            <input id="inp-nome" type="text" placeholder="Nome do aluno"/>
+          </div>
+          <div class="campo">
+            <label>Religião <span class="obrig">*</span></label>
+            <input id="inp-religiao" type="text" placeholder="Ex: Catolicismo" list="sugestoes" autocomplete="off"/>
+            <datalist id="sugestoes">
+              <option value="Catolicismo"/>
+              <option value="Evangélico"/>
+              <option value="Espiritismo"/>
+              <option value="Umbanda / Candomblé"/>
+              <option value="Judaísmo"/>
+              <option value="Islamismo"/>
+              <option value="Budismo"/>
+              <option value="Sem religião"/>
+              <option value="Outros"/>
+            </datalist>
+          </div>
+        </div>
+        <div class="form-rodape">
+          <span id="form-msg"></span>
+          <button class="btn-adicionar" onclick="adicionarResposta()">Adicionar</button>
+        </div>
+      </div>
+
+      <!-- Resultados -->
+      <div class="card resultado-card" id="resultado-card">
+        <div class="resultado-header">
+          <h3>Resultado</h3>
+          <div class="resultado-acoes">
+            <button class="btn-acao" onclick="window.print()">🖨 Imprimir</button>
+            <button class="btn-acao" onclick="baixarPDF()">⬇ PDF</button>
+          </div>
+        </div>
+        <div id="grafico"></div>
+      </div>
+
+      <!-- Lista de respostas -->
+      <div class="card lista-card">
+        <h3>Respostas registradas</h3>
+        <div id="lista-respostas"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO GRUPO -->
+  <div id="modal-overlay" class="modal-overlay" onclick="fecharModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Novo Grupo</h3>
+      <div class="campo">
+        <label>Nome do grupo <span class="obrig">*</span></label>
+        <input id="inp-grupo-nome" type="text" placeholder="Ex: Grupo A, Turma 3B…"/>
+      </div>
+      <div class="modal-rodape">
+        <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button class="btn-criar" onclick="criarGrupo()">Criar</button>
+      </div>
+      <div id="modal-msg"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
