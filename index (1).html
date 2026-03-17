@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pesquisa Religiosa da Turma</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Lato:wght@300;400;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    .btn-admin { background:transparent; border:1px solid #444; color:#888; padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer; transition:all .2s; font-family:'Lato',sans-serif; }
+    .btn-admin:hover { border-color:#e8c547; color:#e8c547; }
+    .btn-admin.ativo { background:rgba(232,197,71,.15); border-color:#e8c547; color:#e8c547; }
+    .admin-badge { display:inline-block; background:rgba(232,197,71,.15); border:1px solid #e8c547; color:#e8c547; font-size:11px; padding:3px 10px; border-radius:20px; margin-left:10px; vertical-align:middle; }
+    .form-card-bloqueado { opacity:.4; pointer-events:none; }
+    .aviso-somente-leitura { text-align:center; padding:14px; background:#1a1a1e; border-radius:8px; color:#666; font-size:13px; margin-bottom:4px; }
+  </style>
+</head>
+<body>
+
+  <!-- TELA: INÍCIO -->
+  <div id="tela-inicio" class="tela ativa">
+    <header class="hero">
+      <div class="hero-tag">Trabalho Escolar</div>
+      <h1>Pesquisa<br/><em>Religiosa</em><br/>da Turma</h1>
+      <p class="hero-desc">Cada grupo registra as religiões dos seus membros.<br/>Os resultados são atualizados em tempo real.</p>
+    </header>
+    <main class="inicio-main">
+      <section class="section-grupos">
+        <div class="section-header">
+          <h2>Grupos <span id="admin-badge" style="display:none" class="admin-badge">🔓 Admin</span></h2>
+          <div style="display:flex;gap:10px;align-items:center">
+            <button class="btn-admin" id="btn-admin" onclick="toggleAdmin()">🔒 Admin</button>
+            <button class="btn-novo-grupo" id="btn-novo-grupo" onclick="abrirModalGrupo()" style="display:none">+ Novo grupo</button>
+          </div>
+        </div>
+        <div id="lista-grupos"><div class="vazio">Carregando...</div></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- TELA: GRUPO -->
+  <div id="tela-grupo" class="tela">
+    <div class="grupo-topo">
+      <button class="voltar" onclick="voltarInicio()">← Voltar</button>
+      <div class="grupo-topo-info">
+        <span class="grupo-topo-label">Grupo</span>
+        <h2 id="grupo-nome-topo"></h2>
+      </div>
+      <div class="grupo-topo-total">
+        <span id="total-num">0</span>
+        <span class="total-label">respostas</span>
+      </div>
+    </div>
+    <div class="grupo-corpo">
+      <div class="card form-card" id="form-card">
+        <h3>Adicionar resposta</h3>
+        <div class="form-linha">
+          <div class="campo">
+            <label>Nome <span class="opt">(opcional)</span></label>
+            <input id="inp-nome" type="text" placeholder="Nome do aluno"/>
+          </div>
+          <div class="campo">
+            <label>Religião <span class="obrig">*</span></label>
+            <input id="inp-religiao" type="text" placeholder="Ex: Catolicismo" list="sugestoes" autocomplete="off"/>
+            <datalist id="sugestoes">
+              <option value="Catolicismo"/>
+              <option value="Evangélico"/>
+              <option value="Espiritismo"/>
+              <option value="Umbanda / Candomblé"/>
+              <option value="Judaísmo"/>
+              <option value="Islamismo"/>
+              <option value="Budismo"/>
+              <option value="Sem religião"/>
+              <option value="Outros"/>
+            </datalist>
+          </div>
+        </div>
+        <div class="form-rodape">
+          <span id="form-msg"></span>
+          <button class="btn-adicionar" onclick="adicionarResposta()">Adicionar</button>
+        </div>
+      </div>
+
+      <!-- Aviso somente leitura -->
+      <div id="aviso-leitura" class="aviso-somente-leitura" style="display:none">
+        🔒 Somente leitura — faça login como Admin para adicionar ou remover respostas
+      </div>
+
+      <div class="card resultado-card">
+        <div class="resultado-header">
+          <h3>Resultado</h3>
+          <div class="resultado-acoes">
+            <button class="btn-acao" onclick="window.print()">🖨 Imprimir</button>
+            <button class="btn-acao" onclick="baixarPDF()">⬇ PDF</button>
+          </div>
+        </div>
+        <div id="grafico"></div>
+      </div>
+
+      <div class="card lista-card">
+        <h3>Respostas registradas</h3>
+        <div id="lista-respostas"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: NOVO GRUPO -->
+  <div id="modal-overlay" class="modal-overlay" onclick="fecharModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>Novo Grupo</h3>
+      <div class="campo">
+        <label>Nome do grupo <span class="obrig">*</span></label>
+        <input id="inp-grupo-nome" type="text" placeholder="Ex: Grupo A, Turma 3B…"/>
+      </div>
+      <div class="modal-rodape">
+        <button class="btn-cancelar" onclick="fecharModal()">Cancelar</button>
+        <button class="btn-criar" onclick="criarGrupo()">Criar</button>
+      </div>
+      <div id="modal-msg"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: SENHA ADMIN -->
+  <div id="modal-senha" class="modal-overlay" onclick="fecharModalSenha()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <h3>🔐 Acesso Admin</h3>
+      <div class="campo">
+        <label>Senha</label>
+        <input id="inp-senha" type="password" placeholder="Digite a senha…"/>
+      </div>
+      <div class="modal-rodape">
+        <button class="btn-cancelar" onclick="fecharModalSenha()">Cancelar</button>
+        <button class="btn-criar" onclick="confirmarSenha()">Entrar</button>
+      </div>
+      <div id="senha-msg" style="color:#e85b5b;font-size:13px;margin-top:10px;min-height:16px"></div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getFirestore, collection, doc,
+      addDoc, getDocs, deleteDoc,
+      onSnapshot, query, orderBy, where
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAn1O64cnZZg3iSr9sHOT7Ib9XrtZ8I8g",
+      authDomain: "portfolio-85046.firebaseapp.com",
+      projectId: "portfolio-85046",
+      storageBucket: "portfolio-85046.firebasestorage.app",
+      messagingSenderId: "508713437066",
+      appId: "1:508713437066:web:9d6ca9ad89bac8271c2a73"
+    };
+
+    const SENHA_ADMIN = "Th@l3s@dm1n";
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const $ = id => document.getElementById(id);
+    const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+    let grupoAtual = null;
+    let unsubRespostas = null;
+    let isAdmin = false;
+
+    // ── Admin ─────────────────────────────
+    window.toggleAdmin = () => {
+      if (isAdmin) {
+        // Sair do modo admin
+        isAdmin = false;
+        atualizarModoAdmin();
+      } else {
+        // Pedir senha
+        $('inp-senha').value = '';
+        $('senha-msg').textContent = '';
+        $('modal-senha').classList.add('aberto');
+        setTimeout(() => $('inp-senha').focus(), 50);
+      }
+    };
+
+    window.fecharModalSenha = () => $('modal-senha').classList.remove('aberto');
+
+    window.confirmarSenha = () => {
+      const senha = $('inp-senha').value;
+      if (senha === SENHA_ADMIN) {
+        isAdmin = true;
+        fecharModalSenha();
+        atualizarModoAdmin();
+        carregarGrupos();
+      } else {
+        $('senha-msg').textContent = '❌ Senha incorreta.';
+        $('inp-senha').value = '';
+        $('inp-senha').focus();
+      }
+    };
+
+    function atualizarModoAdmin() {
+      const btnAdmin   = $('btn-admin');
+      const btnNovo    = $('btn-novo-grupo');
+      const badge      = $('admin-badge');
+      const formCard   = $('form-card');
+      const avisoLeitura = $('aviso-leitura');
+
+      if (isAdmin) {
+        btnAdmin.textContent = '🔓 Sair';
+        btnAdmin.classList.add('ativo');
+        btnNovo.style.display = 'inline-flex';
+        badge.style.display = 'inline-block';
+        if (formCard) { formCard.classList.remove('form-card-bloqueado'); formCard.style.display=''; }
+        if (avisoLeitura) avisoLeitura.style.display = 'none';
+      } else {
+        btnAdmin.textContent = '🔒 Admin';
+        btnAdmin.classList.remove('ativo');
+        btnNovo.style.display = 'none';
+        badge.style.display = 'none';
+        if (formCard) { formCard.style.display = 'none'; }
+        if (avisoLeitura) avisoLeitura.style.display = 'block';
+      }
+      // Re-renderiza lista para mostrar/esconder botões de deletar
+      if (grupoAtual) escutarRespostas(grupoAtual.id);
+      carregarGrupos();
+    }
+
+    // ── Navegação ─────────────────────────
+    window.voltarInicio = () => {
+      if (unsubRespostas) { unsubRespostas(); unsubRespostas = null; }
+      grupoAtual = null;
+      mostrarTela('tela-inicio');
+      carregarGrupos();
+    };
+
+    function mostrarTela(id) {
+      document.querySelectorAll('.tela').forEach(t => t.classList.remove('ativa'));
+      $(id).classList.add('ativa');
+    }
+
+    // ── Modal grupo ───────────────────────
+    window.abrirModalGrupo = () => {
+      if (!isAdmin) return;
+      $('inp-grupo-nome').value = '';
+      $('modal-msg').textContent = '';
+      $('modal-overlay').classList.add('aberto');
+      setTimeout(() => $('inp-grupo-nome').focus(), 50);
+    };
+    window.fecharModal = () => $('modal-overlay').classList.remove('aberto');
+
+    // ── Grupos ────────────────────────────
+    async function carregarGrupos() {
+      const lista = $('lista-grupos');
+      lista.innerHTML = '<div class="vazio">Carregando...</div>';
+      const snap = await getDocs(query(collection(db, 'grupos'), orderBy('nome')));
+      if (snap.empty) {
+        lista.innerHTML = '<div class="vazio">Nenhum grupo ainda.' + (isAdmin ? ' Clique em "+ Novo grupo".' : '') + '</div>';
+        return;
+      }
+      lista.innerHTML = '';
+      for (const d of snap.docs) {
+        const g = { id: d.id, ...d.data() };
+        const rSnap = await getDocs(query(collection(db, 'respostas'), where('grupoId', '==', g.id)));
+        const total = rSnap.size;
+        const div = document.createElement('div');
+        div.className = 'grupo-item';
+        div.innerHTML = `
+          <div class="grupo-item-letra">${esc(g.nome[0].toUpperCase())}</div>
+          <div class="grupo-item-info" onclick="abrirGrupo('${g.id}','${esc(g.nome)}')">
+            <div class="grupo-item-nome">${esc(g.nome)}</div>
+            <div class="grupo-item-total">${total} resposta${total!==1?'s':''} registrada${total!==1?'s':''}</div>
+          </div>
+          <div class="grupo-item-seta" onclick="abrirGrupo('${g.id}','${esc(g.nome)}')">›</div>
+          ${isAdmin ? `<button class="grupo-item-del" onclick="deletarGrupo('${g.id}','${esc(g.nome)}')" title="Excluir">✕</button>` : ''}
+        `;
+        lista.appendChild(div);
+      }
+    }
+
+    window.criarGrupo = async () => {
+      if (!isAdmin) return;
+      const nome = $('inp-grupo-nome').value.trim();
+      if (!nome) { $('modal-msg').textContent = 'Digite o nome do grupo.'; return; }
+      const snap = await getDocs(query(collection(db,'grupos'), where('nome','==',nome)));
+      if (!snap.empty) { $('modal-msg').textContent = 'Já existe um grupo com esse nome.'; return; }
+      await addDoc(collection(db, 'grupos'), { nome });
+      fecharModal();
+      carregarGrupos();
+    };
+
+    window.deletarGrupo = async (id, nome) => {
+      if (!isAdmin) return;
+      if (!confirm(`Excluir o grupo "${nome}" e todas as respostas?`)) return;
+      const rSnap = await getDocs(query(collection(db,'respostas'), where('grupoId','==',id)));
+      for (const d of rSnap.docs) await deleteDoc(doc(db,'respostas',d.id));
+      await deleteDoc(doc(db,'grupos',id));
+      carregarGrupos();
+    };
+
+    // ── Tela do grupo ─────────────────────
+    window.abrirGrupo = (id, nome) => {
+      grupoAtual = { id, nome };
+      $('grupo-nome-topo').textContent = nome;
+      // Mostra/esconde form conforme modo admin
+      const formCard = $('form-card');
+      const avisoLeitura = $('aviso-leitura');
+      if (isAdmin) {
+        formCard.style.display = '';
+        avisoLeitura.style.display = 'none';
+      } else {
+        formCard.style.display = 'none';
+        avisoLeitura.style.display = 'block';
+      }
+      mostrarTela('tela-grupo');
+      escutarRespostas(id);
+    };
+
+    function escutarRespostas(grupoId) {
+      if (unsubRespostas) unsubRespostas();
+      const q = query(collection(db,'respostas'), where('grupoId','==',grupoId), orderBy('criadoEm','desc'));
+      unsubRespostas = onSnapshot(q, snap => {
+        const lista = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        $('total-num').textContent = lista.length;
+        renderizarLista(lista);
+        renderizarGrafico(lista);
+      });
+    }
+
+    window.adicionarResposta = async () => {
+      if (!isAdmin) return;
+      const nome = $('inp-nome').value.trim();
+      const religiao = $('inp-religiao').value.trim();
+      const msg = $('form-msg');
+      if (!religiao) { setMsg(msg,'Informe a religião.','err'); return; }
+      await addDoc(collection(db,'respostas'), {
+        grupoId: grupoAtual.id,
+        nome: nome || '',
+        religiao,
+        criadoEm: Date.now()
+      });
+      $('inp-nome').value = '';
+      $('inp-religiao').value = '';
+      setMsg(msg,'✓ Adicionado!','ok');
+      setTimeout(() => { msg.textContent=''; msg.className=''; }, 2000);
+    };
+
+    window.deletarResposta = async (id) => {
+      if (!isAdmin) return;
+      await deleteDoc(doc(db,'respostas',id));
+    };
+
+    // ── Renderizar lista ──────────────────
+    function renderizarLista(respostas) {
+      const cont = $('lista-respostas');
+      if (!respostas.length) {
+        cont.innerHTML = '<div class="lista-vazia">Nenhuma resposta ainda.</div>';
+        return;
+      }
+      cont.innerHTML = respostas.map(r => `
+        <div class="resposta-item">
+          <div class="resposta-dot"></div>
+          <div class="resposta-nome">${esc(r.nome||'—')}</div>
+          <div class="resposta-religiao">${esc(r.religiao)}</div>
+          ${isAdmin ? `<button class="resposta-del" onclick="deletarResposta('${r.id}')" title="Remover">✕</button>` : ''}
+        </div>
+      `).join('');
+    }
+
+    // ── Renderizar gráfico ────────────────
+    function renderizarGrafico(respostas) {
+      const cont = $('grafico');
+      if (!respostas.length) {
+        cont.innerHTML = '<div class="grafico-vazio">Adicione respostas para ver o resultado.</div>';
+        return;
+      }
+      const contagem = {};
+      respostas.forEach(r => { const k=r.religiao.trim(); contagem[k]=(contagem[k]||0)+1; });
+      const ordenado = Object.entries(contagem).sort((a,b)=>b[1]-a[1]);
+      const total = respostas.length;
+      const resumo = `
+        <div class="grafico-resumo">
+          <div class="resumo-item"><span class="resumo-num">${total}</span><span class="resumo-label">Total</span></div>
+          <div class="resumo-item"><span class="resumo-num">${ordenado.length}</span><span class="resumo-label">Religiões</span></div>
+          <div class="resumo-item"><span class="resumo-num">${((ordenado[0][1]/total)*100).toFixed(0)}%</span><span class="resumo-label">${esc(ordenado[0][0])}</span></div>
+        </div>
+      `;
+      const barras = ordenado.map(([rel,qtd],i) => {
+        const pct = ((qtd/total)*100).toFixed(1);
+        const cor = i<8 ? `c${i}` : 'cn';
+        return `
+          <div class="barra-linha">
+            <div class="barra-topo">
+              <span class="barra-nome">${esc(rel)}</span>
+              <div class="barra-stats"><span class="barra-qtd">${qtd}</span><span class="barra-pct">${pct}%</span></div>
+            </div>
+            <div class="barra-trilho"><div class="barra-fill ${cor}" style="width:${pct}%"></div></div>
+          </div>`;
+      }).join('');
+      cont.innerHTML = resumo + barras;
+    }
+
+    // ── PDF ───────────────────────────────
+    window.baixarPDF = async () => {
+      const formCard  = $('form-card');
+      const listaCard = document.querySelector('.lista-card');
+      const acoes     = document.querySelector('.resultado-acoes');
+      const voltar    = document.querySelector('.voltar');
+      const aviso     = $('aviso-leitura');
+      formCard.style.display='none'; listaCard.style.display='none';
+      acoes.style.visibility='hidden'; voltar.style.visibility='hidden';
+      if (aviso) aviso.style.display='none';
+      await html2pdf().set({
+        margin:0,
+        filename:`pesquisa-${$('grupo-nome-topo').textContent.toLowerCase().replace(/\s+/g,'-')}.pdf`,
+        image:{type:'jpeg',quality:.98},
+        html2canvas:{scale:2,useCORS:true,backgroundColor:'#0e0e10'},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+      }).from(document.getElementById('tela-grupo')).save();
+      if (isAdmin) formCard.style.display='';
+      listaCard.style.display='';
+      acoes.style.visibility=''; voltar.style.visibility='';
+      if (aviso && !isAdmin) aviso.style.display='block';
+    };
+
+    // ── Utilitários ───────────────────────
+    function setMsg(el, txt, tipo) { el.textContent=txt; el.className=tipo; }
+
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      if ($('modal-senha').classList.contains('aberto')) { confirmarSenha(); return; }
+      if ($('modal-overlay').classList.contains('aberto')) { criarGrupo(); return; }
+      if ($('tela-grupo').classList.contains('ativa') && isAdmin) adicionarResposta();
+    });
+
+    // ── Init ──────────────────────────────
+    atualizarModoAdmin();
+    carregarGrupos();
+  </script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</body>
+</html>
